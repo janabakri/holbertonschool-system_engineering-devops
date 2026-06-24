@@ -1,1 +1,79 @@
-https://imgur.com/uF6fJHa
+User
+  |
+  | HTTP/HTTPS request
+  v
+www.foobar.com
+  |
+  | DNS A record -> 8.8.8.8
+  v
++----------------------------------+
+|            Server                |
+|          IP: 8.8.8.8             |
+|                                  |
+|  +---------+                     |
+|  | Nginx   |  (Web Server)       |
+|  +---------+                     |
+|         |                        |
+|         v                        |
+|  +---------+                     |
+|  | App     |  (Application       |
+|  | Server  |   Server)           |
+|  +---------+                     |
+|         |                        |
+|         v                        |
+|  +---------+                     |
+|  | App     |  (Application Code) |
+|  | Files   |                     |
+|  +---------+                     |
+|         |                        |
+|         v                        |
+|  +---------+                     |
+|  | MySQL   |  (Database)         |
+|  +---------+                     |
++----------------------------------+
+Explanation
+What is a server?
+
+A server is a computer that provides services, resources, or data to other computers over a network.
+
+What is the role of the domain name?
+
+The domain name foobar.com provides a human-readable address that users can type into a browser instead of remembering an IP address.
+
+What type of DNS record is www in www.foobar.com?
+
+www is typically an A record, which maps a hostname to an IPv4 address (8.8.8.8).
+
+What is the role of the web server (Nginx)?
+
+The web server receives HTTP/HTTPS requests from clients and serves static content or forwards requests to the application server.
+
+What is the role of the application server?
+
+The application server executes the application logic and generates dynamic content.
+
+What is the role of the database (MySQL)?
+
+The database stores and retrieves application data such as users, posts, products, and settings.
+
+What is the server using to communicate with the user's computer?
+
+The server communicates with the client using the TCP/IP protocol suite, typically through HTTP or HTTPS.
+
+Issues with this Infrastructure
+1. SPOF (Single Point of Failure)
+
+The entire website depends on one server. If that server fails, the website becomes unavailable.
+
+2. Downtime during maintenance
+
+Deploying new code, restarting services, or performing updates may temporarily take the website offline.
+
+3. Cannot scale
+
+A single server has limited CPU, memory, disk, and network resources. High traffic can overwhelm it, causing slow responses or outages.
+
+Acronyms
+LAMP: Linux, Apache, MySQL, PHP (or Perl/Python)
+SPOF: Single Point Of Failure
+QPS: Queries Per Second
