@@ -1,1 +1,328 @@
-https://imgur.com/undefined
+                             User
+                               |
+                         HTTPS (443)
+                               |
+                               v
+                    +--------------------+
+                    | HAProxy            |
+                    | Load Balancer      |
+                    | SSL Certificate    |
+                    | Monitoring Agent   |
+                    | Firewall           |
+                    +--------------------+
+                       /              \
+                      /                \
+                     v                  v
+
+       +----------------------+  +----------------------+
+       | Server 1             |  | Server 2             |
+       |----------------------|  |----------------------|
+       | Firewall             |  | Firewall             |
+       | Monitoring Agent     |  | Monitoring Agent     |
+       | Nginx                |  | Nginx                |
+       | Application Server   |  | Application Server   |
+       | Application Files    |  | Application Files    |
+       | MySQL Primary        |----Replication----+
+       +----------------------+                  |
+                                                  |
+                                        +------------------+
+                                        | MySQL Replica    |
+                                        +------------------+
+Why Each Additional Element Is Added
+1. Firewalls
+
+A firewall is added to each server to filter incoming and outgoing network traffic.
+
+Benefits:
+
+Blocks unauthorized access
+Allows only required ports (e.g., 80, 443, 22)
+Reduces attack surface
+Protects internal services
+What are firewalls for?
+
+Firewalls enforce security rules that determine which network traffic is allowed or denied.
+
+Example:
+
+Allow:
+- HTTPS (443)
+- HTTP (80)
+- SSH (22)
+
+Block:
+- Unused ports
+- Unauthorized connections
+2. SSL Certificate
+
+The SSL/TLS certificate enables HTTPS.
+
+Benefits:
+
+Encrypts data in transit
+Protects passwords and sensitive information
+Verifies the server's identity
+Prevents eavesdropping and many man-in-the-middle attacks
+Why serve traffic over HTTPS?
+
+Without HTTPS:
+
+User ---- HTTP ----> Server
+
+Traffic is readable by anyone intercepting it.
+
+With HTTPS:
+
+User ==== Encrypted ==== Server
+
+Traffic is encrypted and cannot be easily read by attackers.
+
+3. Monitoring Clients
+
+A monitoring agent is installed on each server.
+
+Examples:
+
+Sumo Logic collector
+Datadog Agent
+New Relic Agent
+Prometheus Node Exporter
+Why add monitoring?
+
+Monitoring helps:
+
+Detect failures
+Track performance
+Monitor resource usage
+Generate alerts
+Analyze trends
+How Monitoring Collects Data
+
+The monitoring agent runs on each server and collects:
+
+CPU usage
+Memory usage
+Disk usage
+Network traffic
+Application logs
+Web server metrics
+
+Flow:
+
+Server
+   |
+Monitoring Agent
+   |
+Monitoring Platform
+   |
+Dashboard / Alerts
+How to Monitor Web Server QPS
+QPS = Queries Per Second
+
+For a web server, QPS generally means the number of requests handled per second.
+
+To monitor it:
+
+Enable Nginx metrics or access logs.
+Configure the monitoring agent to collect request statistics.
+Create a dashboard displaying:
+Requests per second
+Response times
+Error rates
+Configure alerts when QPS exceeds expected thresholds.
+
+Example:
+
+Nginx
+  |
+Access Logs / Metrics
+  |
+Monitoring Agent
+  |
+Monitoring Dashboard
+Issues With This Infrastructure
+1. SSL Termination at the Load Balancer
+
+SSL termination means:
+
+User -- HTTPS --> Load Balancer
+Load Balancer -- HTTP --> Backend Servers
+
+Problem:
+
+Traffic between the load balancer and backend servers is unencrypted.
+An attacker with access to the internal network could intercept sensitive data.
+Sensitive information is exposed inside the infrastructure.
+
+A more secure design would use HTTPS end-to-end.
+
+2. Only One MySQL Server Accepting Writes
+
+The Primary database remains a bottleneck.
+
+Problems:
+
+If the Primary fails, write operations stop.
+Applications cannot create or update data.
+Manual failover may be required.
+High write workloads can overload the Primary.
+
+This is still a Single Point of Failure for database writes.
+
+3. Servers Contain All Components
+
+Each server contains:
+
+Nginx
+Application Server
+Application Files
+Database
+
+Problems:
+
+Resource Contention
+
+The database, web server, and application compete for:
+
+CPU
+Memory
+Disk I/O
+Network bandwidth
+Harder Scaling
+
+You cannot independently scale:
+
+Web layer
+Application layer
+Database layer
+Maintenance Complexity
+
+Changes to one component may affect others on the same machine.
+
+Security Risk
+
+If one server is compromised, multiple critical services are exposed simultaneously.
+
+Summary
+Added Components
+3 Firewalls
+1 SSL Certificate (HTTPS)
+3 Monitoring Agents
+Benefits
+Improved security
+Encrypted communication
+Visibility into system health
+Alerting and performance tracking
+Remaining Weaknesses
+SSL terminated at the load balancer
+Single writable MySQL Primary
+Mixed responsibilities on each server
+Limited scalability and fault isolation
+
+This covers the key points expected for 2-secured_and_monitored_web_infrastructure during the whiteboard review.
+
+i want the diagram looks better
+
+For whiteboarding interviews and Holberton reviews, a clean layered diagram is usually easier to explain than boxes scattered across the page.
+
+Try something like this:
+
+                            +------------------+
+                            |      User        |
+                            +------------------+
+                                      |
+                                      | HTTPS (443)
+                                      v
+                           www.foobar.com
+                                      |
+                                      v
+                    +--------------------------------+
+                    |      HAProxy Load Balancer     |
+                    |   SSL Certificate (HTTPS)     |
+                    |   Monitoring Agent            |
+                    |   Firewall                    |
+                    +--------------------------------+
+                              /             \
+                             /               \
+                            /                 \
+                           v                   v
+
+        +--------------------------------+   +--------------------------------+
+        |            Server 1            |   |            Server 2            |
+        |--------------------------------|   |--------------------------------|
+        | Firewall                       |   | Firewall                       |
+        | Monitoring Agent               |   | Monitoring Agent               |
+        | Nginx (Web Server)             |   | Nginx (Web Server)             |
+        | Application Server             |   | Application Server             |
+        | Application Files              |   | Application Files              |
+        | MySQL Primary (Write)          |   | MySQL Replica (Read)           |
+        +--------------------------------+   +--------------------------------+
+                          |                             ^
+                          |                             |
+                          +-------- Replication --------+
+Even better for a screenshot (Draw.io style)
+┌─────────┐
+│  User   │
+└────┬────┘
+     │ HTTPS
+     ▼
+┌─────────────────────┐
+│   www.foobar.com    │
+└─────────┬───────────┘
+          │
+          ▼
+┌─────────────────────┐
+│      HAProxy        │
+│  SSL Termination    │
+│ Firewall + Monitor  │
+└───────┬─────┬───────┘
+        │     │
+        │     │
+        ▼     ▼
+
+┌─────────────────┐   ┌─────────────────┐
+│    SERVER 1     │   │    SERVER 2     │
+├─────────────────┤   ├─────────────────┤
+│ Firewall        │   │ Firewall        │
+│ Monitor Agent   │   │ Monitor Agent   │
+│ Nginx           │   │ Nginx           │
+│ App Server      │   │ App Server      │
+│ App Files       │   │ App Files       │
+│ MySQL Primary   │──►│ MySQL Replica   │
+└─────────────────┘   └─────────────────┘
+      Write DB             Read Replica
+What reviewers usually like to see labeled
+
+Add small labels beside arrows:
+
+User
+  │
+  ├── DNS Lookup (A Record)
+  ▼
+www.foobar.com
+  │
+  ├── HTTPS Request
+  ▼
+HAProxy
+  │
+  ├── Round Robin
+  ▼
+Server 1 / Server 2
+
+And put these notes on the side of the diagram:
+
+Security:
+✓ Firewall on every server
+✓ HTTPS enabled
+✓ SSL certificate installed
+
+Monitoring:
+✓ Monitoring agent on all 3 servers
+✓ Logs, CPU, RAM, Disk, Network
+
+Database:
+✓ Primary → Replica replication
+
+Load Balancer:
+✓ Active-Active
+✓ Round Robin distribution
