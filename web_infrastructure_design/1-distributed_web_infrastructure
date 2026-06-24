@@ -1,1 +1,196 @@
-https://imgur.com/WeGtnRK
+                        User
+                          |
+                          |
+                    www.foobar.com
+                          |
+                     DNS A Record
+                          |
+                          v
+                 +----------------+
+                 | HAProxy        |
+                 | Load Balancer  |
+                 +----------------+
+                    /          \
+                   /            \
+                  v              v
+
+        +----------------+  +----------------+
+        | Server 1       |  | Server 2       |
+        |----------------|  |----------------|
+        | Nginx          |  | Nginx          |
+        | App Server     |  | App Server     |
+        | App Files      |  | App Files      |
+        | MySQL Primary  |<----replication----+
+        +----------------+  | MySQL Replica |
+                            +----------------+
+Why each additional element is added
+Load Balancer (HAProxy)
+
+Added to distribute incoming requests across multiple servers.
+
+Benefits:
+
+Improves availability
+Improves performance
+Prevents a single web server from becoming overloaded
+Allows one server to fail while the site remains available
+Second Server
+
+Added for redundancy and scalability.
+
+Benefits:
+
+Handles more traffic
+Reduces risk of complete outage if one server fails
+Allows maintenance on one server while another continues serving users
+Database Replica
+
+Added to provide redundancy for database data.
+
+Benefits:
+
+Backup copy of data
+Can be promoted if the primary database fails
+Can be used for read operations in larger infrastructures
+Load Balancer Distribution Algorithm
+
+A common HAProxy algorithm is Round Robin.
+
+How it works:
+
+Request 1 -> Server 1
+Request 2 -> Server 2
+Request 3 -> Server 1
+Request 4 -> Server 2
+
+Traffic is distributed evenly among available servers.
+
+Active-Active vs Active-Passive
+Active-Active
+
+Both servers actively handle client requests.
+
+Users
+  |
+Load Balancer
+ /         \
+Server1   Server2
+(active)  (active)
+
+Advantages:
+
+Better resource utilization
+Higher capacity
+Better performance
+Active-Passive
+
+One server handles all traffic while the second remains on standby.
+
+Users
+  |
+Load Balancer
+      |
+   Server1
+   (active)
+
+   Server2
+   (standby)
+
+Advantages:
+
+Simpler failover
+
+Disadvantages:
+
+Wasted resources while standby server is idle
+
+In this design, the load balancer is typically configured in an Active-Active setup.
+
+How a Primary-Replica Database Cluster Works
+Primary (Master)
+
+Responsible for:
+
+INSERT
+UPDATE
+DELETE
+Data modifications
+
+All write operations occur on the Primary database.
+
+Replica (Slave)
+
+Receives updates from the Primary through replication.
+
+Responsible for:
+
+Maintaining a copy of the data
+Optionally serving read queries
+
+Replication flow:
+
+Application
+      |
+      v
+Primary DB
+      |
+      | Replication
+      v
+Replica DB
+Difference Between Primary and Replica
+Primary
+Accepts writes
+Source of truth
+Sends updates to replicas
+Replica
+Usually read-only
+Receives data from Primary
+Cannot normally accept application writes
+Issues with this Infrastructure
+SPOF (Single Point of Failure)
+
+Even with improvements, some SPOFs remain:
+
+Load Balancer
+User
+  |
+HAProxy
+
+If the single HAProxy server fails:
+
+No requests can reach the web servers.
+Primary Database
+
+If the Primary database fails:
+
+Write operations stop.
+Users may be unable to create or update data.
+Security Issues
+No Firewall
+
+Problems:
+
+All services may be exposed directly to the Internet.
+Increased attack surface.
+No HTTPS
+
+Problems:
+
+Traffic is transmitted in plain text.
+Credentials and sensitive information can be intercepted.
+Vulnerable to man-in-the-middle attacks.
+No Monitoring
+
+Problems:
+
+No visibility into server health.
+Failures may go unnoticed.
+Difficult troubleshooting.
+No performance metrics or alerting.
+Summary of Remaining Weaknesses
+Load balancer is a SPOF.
+Primary database is a SPOF for writes.
+No firewall protection.
+No HTTPS encryption.
+No monitoring or alerting.
+Database replication does not automatically provide failover.
