@@ -1,1 +1,169 @@
-https://imgur.com/oeV5PCA
+                          +-------------+
+                          |    Users    |
+                          +------+------+ 
+                                 |
+                              HTTPS
+                                 |
+                                 v
+
+                +-------------------------------+
+                | Virtual IP (VIP) / DNS Target |
+                +---------------+---------------+
+                                |
+                 +--------------+--------------+
+                 |                             |
+                 v                             v
+
+      +-------------------+       +-------------------+
+      |   HAProxy #1      |       |   HAProxy #2      |
+      | Firewall          |       | Firewall          |
+      | Monitoring Agent  |       | Monitoring Agent  |
+      +---------+---------+       +---------+---------+
+                \                     /
+                 \                   /
+                  \                 /
+                   +---------------+
+                           |
+                 Round Robin Routing
+                           |
+          +----------------+----------------+
+          |                                 |
+          v                                 v
+
+ +-------------------+          +-------------------+
+ |   Web/App Server 1|          |   Web/App Server 2|
+ |-------------------|          |-------------------|
+ | Nginx             |          | Nginx             |
+ | Application Server|          | Application Server|
+ | Application Files |          | Application Files |
+ | Firewall          |          | Firewall          |
+ | Monitoring Agent  |          | Monitoring Agent  |
+ +---------+---------+          +---------+---------+
+           \                           /
+            \                         /
+             \                       /
+              +---------------------+
+                        |
+                        v
+
+              +----------------------+
+              |   Database Server    |
+              |----------------------|
+              | MySQL Primary        |
+              | MySQL Replica        |
+              | Firewall             |
+              | Monitoring Agent     |
+              +----------------------+
+Why Each Additional Element Is Added
+1. Additional Server
+
+Added to separate responsibilities and improve scalability.
+
+Benefits:
+
+More resources available
+Easier maintenance
+Better fault isolation
+Independent scaling of services
+2. Second HAProxy (Load Balancer Cluster)
+
+In Task 2, the load balancer was a SPOF.
+
+Adding a second HAProxy creates high availability.
+
+HAProxy #1 (Active)
+HAProxy #2 (Standby or Active)
+
+If one load balancer fails, the other continues serving traffic.
+
+Benefits:
+
+Eliminates load balancer SPOF
+Improves availability
+Supports failover
+3. Split Components onto Dedicated Servers
+
+Instead of mixing everything on the same machine:
+
+Web Layer
+Nginx
+
+Responsibilities:
+
+Serve static files
+Reverse proxy requests
+Handle HTTPS traffic
+Application Layer
+Application Server
+Application Files
+
+Responsibilities:
+
+Execute business logic
+Generate dynamic content
+Database Layer
+MySQL
+
+Responsibilities:
+
+Store and retrieve data
+
+Benefits:
+
+Easier scaling
+Better security
+Better performance
+Clear separation of responsibilities
+Why This Design Is Better
+Better Scalability
+
+Need more web capacity?
+
+Add Web/App Server 3
+Add Web/App Server 4
+
+without changing the database layer.
+
+Better Fault Tolerance
+Two load balancers instead of one
+Multiple application servers
+Database replication available
+Better Resource Utilization
+
+Database workloads no longer compete with:
+
+Nginx
+Application processes
+
+for CPU, RAM, and disk I/O.
+
+Application Server vs Web Server
+Web Server (Nginx)
+
+Handles:
+
+HTTP/HTTPS requests
+Static files (CSS, JS, images)
+Reverse proxying
+
+Example:
+
+User → Nginx
+Application Server
+
+Handles:
+
+Business logic
+Dynamic content generation
+Database interactions
+
+Example:
+
+Nginx → Application Server → MySQL
+Key Improvements Over Task 2
+Task 2	Task 3
+One load balancer	Two load balancers (cluster)
+Mixed server roles	Dedicated roles
+Harder to scale	Easier horizontal scaling
+More resource contention	Better resource isolation
+LB was a SPOF	HA load balancer cluster
